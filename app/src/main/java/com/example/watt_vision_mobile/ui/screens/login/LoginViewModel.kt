@@ -1,10 +1,14 @@
 package com.example.watt_vision_mobile.ui.screens.login
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.watt_vision_mobile.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 data class LoginUiState(
     val email: String = "",
@@ -15,7 +19,9 @@ data class LoginUiState(
     val errorMessage: String? = null
 )
 
-class LoginViewModel : ViewModel() {
+class LoginViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val authRepository = AuthRepository(application)
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
@@ -45,6 +51,16 @@ class LoginViewModel : ViewModel() {
         }
 
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-        onSuccess()
+
+        viewModelScope.launch {
+            val result = authRepository.login(state.email, state.password)
+            _uiState.update { it.copy(isLoading = false) }
+
+            result.onSuccess {
+                onSuccess()
+            }.onFailure { e ->
+                _uiState.update { it.copy(errorMessage = e.message ?: "Erro ao realizar login") }
+            }
+        }
     }
 }

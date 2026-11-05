@@ -27,7 +27,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             WattVisionTheme {
-                var isLoggedIn by remember { mutableStateOf(false) }
+                // Modo de teste: login por padrão como verdadeiro para acessar o Dashboard diretamente
+                var isLoggedIn by remember { mutableStateOf(true) }
                 var selectedRoute by remember { mutableStateOf("Dashboard") }
 
                 val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)

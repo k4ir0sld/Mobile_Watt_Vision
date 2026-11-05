@@ -4,16 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.watt_vision_mobile.ui.screens.dashboard.components.*
 import com.example.watt_vision_mobile.ui.theme.DarkBackground
-import com.example.watt_vision_mobile.ui.theme.TextWhite
 
 @Composable
 fun DashboardScreen(
@@ -28,58 +25,49 @@ fun DashboardScreen(
             .fillMaxSize()
             .background(DarkBackground)
     ) {
-        if (uiState.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = TextWhite)
-            }
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // 1. Cabeçalho com Menu Hamburguer, Título, Atualização e Filtros
-                DashboardHeaderAndFilters(
-                    filters = uiState.filters,
-                    lastUpdatedText = uiState.lastUpdatedText,
-                    onFilterChanged = { key, value -> viewModel.onFilterChanged(key, value) },
-                    onRefreshClick = { viewModel.loadDashboardData() },
-                    onMenuClick = onMenuClick
-                )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // 1. Cabeçalho com Menu Hamburguer, Título, Atualização e Filtros
+            DashboardHeaderAndFilters(
+                filters = uiState.filters,
+                lastUpdatedText = uiState.lastUpdatedText,
+                onFilterChanged = { key, value -> viewModel.onFilterChanged(key, value) },
+                onRefreshClick = { viewModel.loadDashboardData() },
+                onMenuClick = onMenuClick
+            )
 
-                // 2. Botão de Composição do Cálculo (Σ Ver Composição) e Modal
-                CalculoButtonAndModal(
-                    composicaoItems = uiState.composicaoItems,
-                    isOpen = uiState.isComposicaoModalOpen,
-                    onOpenModal = { viewModel.setComposicaoModalVisible(true) },
-                    onCloseModal = { viewModel.setComposicaoModalVisible(false) }
-                )
+            // 2. Botão de Composição do Cálculo (Σ Ver Composição) e Modal
+            CalculoButtonAndModal(
+                composicaoItems = uiState.composicaoItems,
+                isOpen = uiState.isComposicaoModalOpen,
+                onOpenModal = { viewModel.setComposicaoModalVisible(true) },
+                onCloseModal = { viewModel.setComposicaoModalVisible(false) }
+            )
 
-                // 3. Cards de Resumo (StatCards em grid 2 colunas para mobile)
-                StatCardsSection(cards = uiState.summaryCards)
+            // 3. Cards de Resumo (StatCards em grid 2 colunas para mobile)
+            StatCardsSection(cards = uiState.summaryCards)
 
-                // 4. Gráfico "Desempenho do Sistema" (Métricas e Períodos)
-                SystemPerformanceChart(
-                    points = uiState.chartPoints,
-                    selectedMetric = uiState.selectedMetric,
-                    selectedPeriod = uiState.selectedChartPeriod,
-                    onMetricSelected = { viewModel.onMetricSelected(it) },
-                    onPeriodSelected = { viewModel.onChartPeriodSelected(it) }
-                )
+            // 4. Gráfico "Desempenho do Sistema" (Métricas e Períodos)
+            SystemPerformanceChart(
+                points = uiState.chartPoints,
+                selectedMetric = uiState.selectedMetric,
+                selectedPeriod = uiState.selectedChartPeriod,
+                onMetricSelected = { viewModel.onMetricSelected(it) },
+                onPeriodSelected = { viewModel.onChartPeriodSelected(it) }
+            )
 
-                // 5. Alarmes Recentes
-                RecentAlarmsSection(
-                    alarms = uiState.alarms,
-                    onSeeAllClick = { /* Navegação para tela de alarmes futuros */ }
-                )
+            // 5. Alarmes Recentes
+            RecentAlarmsSection(
+                alarms = uiState.alarms,
+                onSeeAllClick = { /* Navegação para tela de alarmes */ }
+            )
 
-                Spacer(modifier = Modifier.height(16.dp))
-            }
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
