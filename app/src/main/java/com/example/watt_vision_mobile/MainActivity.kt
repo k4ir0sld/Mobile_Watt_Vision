@@ -9,14 +9,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import com.example.watt_vision_mobile.ui.components.WattVisionDrawerContent
+import com.example.watt_vision_mobile.ui.components.WattVisionBottomBar
 import com.example.watt_vision_mobile.ui.screens.dashboard.DashboardScreen
 import com.example.watt_vision_mobile.ui.screens.dashboard.DashboardViewModel
 import com.example.watt_vision_mobile.ui.screens.login.LoginScreen
 import com.example.watt_vision_mobile.ui.screens.login.LoginViewModel
 import com.example.watt_vision_mobile.ui.screens.placeholder.PlaceholderScreen
 import com.example.watt_vision_mobile.ui.theme.WattVisionTheme
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -27,12 +26,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             WattVisionTheme {
-                // Modo de teste: login por padrão como verdadeiro para acessar o Dashboard diretamente
-                var isLoggedIn by remember { mutableStateOf(true) }
+                var isLoggedIn by remember { mutableStateOf(false) }
                 var selectedRoute by remember { mutableStateOf("Dashboard") }
-
-                val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-                val scope = rememberCoroutineScope()
 
                 if (!isLoggedIn) {
                     LoginScreen(
@@ -44,46 +39,32 @@ class MainActivity : ComponentActivity() {
                         }
                     )
                 } else {
-                    ModalNavigationDrawer(
-                        drawerState = drawerState,
-                        drawerContent = {
-                            WattVisionDrawerContent(
+                    Scaffold(
+                        containerColor = MaterialTheme.colorScheme.background,
+                        bottomBar = {
+                            WattVisionBottomBar(
                                 selectedRoute = selectedRoute,
                                 onRouteSelected = { route ->
                                     selectedRoute = route
-                                    scope.launch { drawerState.close() }
-                                },
-                                onLogout = {
-                                    scope.launch { drawerState.close() }
-                                    isLoggedIn = false
-                                    Toast.makeText(this@MainActivity, "Sessão encerrada", Toast.LENGTH_SHORT).show()
                                 }
                             )
                         }
-                    ) {
-                        Scaffold(
-                            containerColor = MaterialTheme.colorScheme.background
-                        ) { innerPadding ->
-                            val contentModifier = Modifier.padding(innerPadding)
-                            when (selectedRoute) {
-                                "Dashboard" -> {
-                                    DashboardScreen(
-                                        viewModel = dashboardViewModel,
-                                        onMenuClick = {
-                                            scope.launch {
-                                                if (drawerState.isClosed) drawerState.open() else drawerState.close()
-                                            }
-                                        },
-                                        modifier = contentModifier
-                                    )
-                                }
-                                else -> {
-                                    PlaceholderScreen(
-                                        title = selectedRoute,
-                                        onBackToDashboard = { selectedRoute = "Dashboard" },
-                                        modifier = contentModifier
-                                    )
-                                }
+                    ) { innerPadding ->
+                        val contentModifier = Modifier.padding(innerPadding)
+                        when (selectedRoute) {
+                            "Dashboard" -> {
+                                DashboardScreen(
+                                    viewModel = dashboardViewModel,
+                                    onNavigate = { route -> selectedRoute = route },
+                                    modifier = contentModifier
+                                )
+                            }
+                            else -> {
+                                PlaceholderScreen(
+                                    title = selectedRoute,
+                                    onBackToDashboard = { selectedRoute = "Dashboard" },
+                                    modifier = contentModifier
+                                )
                             }
                         }
                     }

@@ -116,7 +116,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
                 val tensaoStr = ultimaMedicao?.tensao?.let { String.format(Locale.getDefault(), "%.1f V", it) } ?: "N/A"
                 val correnteStr = ultimaMedicao?.corrente?.let { String.format(Locale.getDefault(), "%.2f A", it) } ?: "N/A"
-                val potenciaStr = ultimaMedicao?.potencia_ativa?.let { String.format(Locale.getDefault(), "%.2f kW", it) } ?: "N/A"
+                val potenciaStr = ultimaMedicao?.potencia_ativa?.let { String.format(Locale.getDefault(), "%.1f W", it) } ?: "N/A"
                 val consumoTotalStr = ultimaMedicao?.energia_acumulada?.let { String.format(Locale.getDefault(), "%.2f kWh", it) } ?: "N/A"
 
                 cards = listOf(
@@ -133,7 +133,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 cards = listOf(
                     StatCardData("Consumo Total", "Sem dados", "Servidor offline", "N/A", StatTone.BLUE, "cpu"),
                     StatCardData("Dispositivos Ativos", "0", "Sem conexão", "N/A", StatTone.RED, "wifi_off"),
-                    StatCardData("Potência Ativa", "0 kW", "Sem conexão", "N/A", StatTone.YELLOW, "zap"),
+                    StatCardData("Potência Ativa", "0 W", "Sem conexão", "N/A", StatTone.YELLOW, "zap"),
                     StatCardData("Tensão Atual", "0 V", "Sem conexão", "N/A", StatTone.BLUE, "flash"),
                     StatCardData("Corrente Média", "0 A", "Sem conexão", "N/A", StatTone.GREEN, "activity"),
                     StatCardData("Frequência", "0 Hz", "Sem conexão", "N/A", StatTone.BLUE, "activity")
@@ -142,8 +142,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
             val tensaoVal = ultimaMedicao?.tensao?.let { String.format(Locale.getDefault(), "%.1f V", it) } ?: "N/A"
             val correnteVal = ultimaMedicao?.corrente?.let { String.format(Locale.getDefault(), "%.2f A", it) } ?: "N/A"
-            val potenciaVal = ultimaMedicao?.potencia_ativa?.let { String.format(Locale.getDefault(), "%.2f kW", it) } ?: "N/A"
-            val frequenciaVal = ultimaMedicao?.frequencia?.let { String.format(Locale.getDefault(), "%.1f Hz", it) } ?: "N/A"
+            val potenciaVal = ultimaMedicao?.potencia_ativa?.let { String.format(Locale.getDefault(), "%.1f W", it) } ?: "N/A"
+            val frequenciaVal = ultimaMedicao?.frequencia?.let { String.format(Locale.getDefault(), "%.1f Hz", it) } ?: "60.0 Hz"
             val fpVal = ultimaMedicao?.fator_potencia?.let { String.format(Locale.getDefault(), "%.2f", it) } ?: "N/A"
             val energiaVal = ultimaMedicao?.energia_acumulada?.let { String.format(Locale.getDefault(), "%.2f kWh", it) } ?: "N/A"
 
@@ -161,7 +161,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val statusText = if (ultimaMedicao != null || realSerieTemporalData.isNotEmpty()) {
                 "Ao vivo às $currentTime (PZEM $idPzem: $pointsCount pts)"
             } else {
-                "Sem resposta da API às $currentTime (Verifique 10.0.2.2:3000)"
+                "Sem resposta da API às $currentTime (Servidor offline)"
             }
 
             _uiState.update {

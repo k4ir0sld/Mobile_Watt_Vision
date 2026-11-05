@@ -6,8 +6,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,87 +27,114 @@ fun DashboardHeaderAndFilters(
     lastUpdatedText: String,
     onFilterChanged: (String, String) -> Unit,
     onRefreshClick: () -> Unit,
-    onMenuClick: () -> Unit,
+    onAlarmesClick: () -> Unit,
+    onConfiguracoesClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        // Cabeçalho Mobile com Botão Menu Hamburguer, Título e Indicador de Atualização
+        // Linha 1: Título/Subtítulo à esquerda e botões pequenos de Alarmes e Configurações à direita
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f, fill = false)
-            ) {
-                IconButton(
-                    onClick = onMenuClick,
-                    modifier = Modifier.size(38.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Menu,
-                        contentDescription = "Abrir menu",
-                        tint = TextWhite,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(6.dp))
-
-                Column {
-                    Text(
-                        text = "Dashboard",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextWhite,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = "Monitoramento Energético em Tempo Real",
-                        fontSize = 11.sp,
-                        color = TextMuted,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+            Column(modifier = Modifier.weight(1f, fill = false)) {
+                Text(
+                    text = "Dashboard",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextWhite,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "Monitoramento Energético em Tempo Real",
+                    fontSize = 11.sp,
+                    color = TextMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = InputBackground,
-                border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
-                modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .clickable { onRefreshClick() }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                // Botão pequeno de Alarmes no Header
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = InputBackground,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
+                    modifier = Modifier.size(36.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Atualizar",
-                        tint = TextMuted,
-                        modifier = Modifier.size(13.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = lastUpdatedText,
-                        fontSize = 11.sp,
-                        color = TextMuted,
-                        maxLines = 1
-                    )
+                    IconButton(onClick = onAlarmesClick, modifier = Modifier.fillMaxSize()) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Alarmes",
+                            tint = ToneYellowText,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+
+                // Botão pequeno de Configurações no Header
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = InputBackground,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    IconButton(onClick = onConfiguracoesClick, modifier = Modifier.fillMaxSize()) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Configurações",
+                            tint = TextMuted,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
-        // Filtros organizados em 2 linhas de 2 itens cada (um em cima do outro)
+        // Linha 2: Botão de atualização e demonstração ao vivo assumindo uma linha inteira
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = InputBackground,
+            border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .clickable { onRefreshClick() }
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = "Atualizar",
+                    tint = LinkBlue,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = lastUpdatedText,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = TextWhite,
+                    maxLines = 1
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Linha 3: Filtros organizados em 2 linhas de 2 itens cada
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
