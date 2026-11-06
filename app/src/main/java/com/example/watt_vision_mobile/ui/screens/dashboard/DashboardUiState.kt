@@ -48,7 +48,20 @@ data class DashboardFilterState(
     val location: String = "Todos",
     val sector: String = "Todos",
     val equipment: String = "Todos"
-)
+) {
+    val isDefault: Boolean
+        get() = period == "Hoje" && location == "Todos" && sector == "Todos" && equipment == "Todos"
+
+    val activeCount: Int
+        get() {
+            var count = 0
+            if (period != "Hoje") count++
+            if (location != "Todos") count++
+            if (sector != "Todos") count++
+            if (equipment != "Todos") count++
+            return count
+        }
+}
 
 data class DashboardUiState(
     val isLoading: Boolean = false,

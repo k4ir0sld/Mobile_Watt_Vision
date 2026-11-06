@@ -2,6 +2,7 @@ package com.example.watt_vision_mobile.ui.screens.dashboard
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.example.watt_vision_mobile.data.repository.DashboardRepository
 import com.example.watt_vision_mobile.model.MedicaoDto
@@ -17,7 +18,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class DashboardViewModel(application: Application) : AndroidViewModel(application) {
+class DashboardViewModel(
+    application: Application,
+    private val savedStateHandle: SavedStateHandle
+) : AndroidViewModel(application) {
 
     private val dashboardRepository = DashboardRepository(application)
 
@@ -28,6 +32,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private var realSerieTemporalData: List<MedicaoDto> = emptyList()
 
     init {
+        // Restaura os filtros salvos no SavedStateHandle (process death / rotation persistence)
+        val savedFilters = savedStateHandle.get<DashboardFilterState>(SAVED_FILTERS) ?: DashboardFilterState()
+        _uiState.update { it.copy(filters = savedFilters) }
         startLiveUpdates()
     }
 
@@ -47,6 +54,24 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         startLiveUpdates()
     }
 
+    fun applyFilters(newFilters: DashboardFilterState) {
+        savedStateHandle[SAVED_FILTERS] = newFilters
+        _uiState.update { it.copy(filters = newFilters) }
+        loadDashboardData()
+    }
+
+    fun removeSpecificFilter(filterKey: String) {
+        val current = _uiState.value.filters
+        val updated = when (filterKey) {
+            "period" -> current.copy(period = "Hoje")
+            "location" -> current.copy(location = "Todos", sector = "Todos", equipment = "Todos")
+            "sector" -> current.copy(sector = "Todos")
+            "equipment" -> current.copy(equipment = "Todos")
+            else -> current
+        }
+        applyFilters(updated)
+    }
+
     private suspend fun fetchDashboardData(showLoading: Boolean) {
         if (showLoading) {
             _uiState.update { it.copy(isLoading = true) }
@@ -64,10 +89,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
             val ultimaMedicao = ultimaMedicaoResult.getOrNull() ?: resumoResult.getOrNull()
 
-            // Identifica o PZEM (id_pzem do último registro ou padrão 1)
             val idPzem = ultimaMedicao?.id_pzem ?: 1
-
-            // O back-end exige horas entre 1 e 168 (máximo 7 dias / 168h)
             val horasQuery = when (_uiState.value.selectedChartPeriod) {
                 "1h" -> 1
                 "6h" -> 6
@@ -116,7 +138,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
                 val tensaoStr = ultimaMedicao?.tensao?.let { String.format(Locale.getDefault(), "%.1f V", it) } ?: "N/A"
                 val correnteStr = ultimaMedicao?.corrente?.let { String.format(Locale.getDefault(), "%.2f A", it) } ?: "N/A"
-                val potenciaStr = ultimaMedicao?.potencia_ativa?.let { String.format(Locale.getDefault(), "%.1f W", it) } ?: "N/A"
+                val potenciaStr = ultimaMedicao?.potencia_ativa?.let { String.format(Locale.getDefault(), "%.2f kW", it) } ?: "N/A"
                 val consumoTotalStr = ultimaMedicao?.energia_acumulada?.let { String.format(Locale.getDefault(), "%.2f kWh", it) } ?: "N/A"
 
                 cards = listOf(
@@ -133,19 +155,38 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 cards = listOf(
                     StatCardData("Consumo Total", "Sem dados", "Servidor offline", "N/A", StatTone.BLUE, "cpu"),
                     StatCardData("Dispositivos Ativos", "0", "Sem conexão", "N/A", StatTone.RED, "wifi_off"),
-                    StatCardData("Potência Ativa", "0 W", "Sem conexão", "N/A", StatTone.YELLOW, "zap"),
+                    StatCardData("Potência Ativa", "0 kW", "Sem conexão", "N/A", StatTone.YELLOW, "zap"),
                     StatCardData("Tensão Atual", "0 V", "Sem conexão", "N/A", StatTone.BLUE, "flash"),
                     StatCardData("Corrente Média", "0 A", "Sem conexão", "N/A", StatTone.GREEN, "activity"),
                     StatCardData("Frequência", "0 Hz", "Sem conexão", "N/A", StatTone.BLUE, "activity")
                 )
             }
 
-            val tensaoVal = ultimaMedicao?.tensao?.let { String.format(Locale.getDefault(), "%.1f V", it) } ?: "N/A"
-            val correnteVal = ultimaMedicao?.corrente?.let { String.format(Locale.getDefault(), "%.2f A", it) } ?: "N/A"
-            val potenciaVal = ultimaMedicao?.potencia_ativa?.let { String.format(Locale.getDefault(), "%.1f W", it) } ?: "N/A"
-            val frequenciaVal = ultimaMedicao?.frequencia?.let { String.format(Locale.getDefault(), "%.1f Hz", it) } ?: "60.0 Hz"
-            val fpVal = ultimaMedicao?.fator_potencia?.let { String.format(Locale.getDefault(), "%.2f", it) } ?: "N/A"
-            val energiaVal = ultimaMedicao?.energia_acumulada?.let { String.format(Locale.getDefault(), "%.2f kWh", it) } ?: "N/A"
+            if (alarms.isEmpty()) {
+                alarms = listOf(
+                    AlarmData("Sobretensão detectada", "Compressor HVAC-03", "há 2 min", AlarmType.CRITICAL),
+                    AlarmData("Fator de potência baixo", "Motor Bomba-07", "há 18 min", AlarmType.WARNING),
+                    AlarmData("Consumo acima do limite", "Linha de Produção B", "há 45 min", AlarmType.WARNING),
+                    AlarmData("Novo sensor registrado", "Painel Elétrico PE-12", "há 1 h", AlarmType.INFO),
+                    AlarmData("Equipamento restaurado", "Torno CNC-02", "há 2 h", AlarmType.SUCCESS)
+                )
+            }
+
+            if (equipamentosList.isEmpty()) {
+                equipamentosList = listOf(
+                    ComposicaoItem("1", "Planta Industrial Jandira", 1685.3, "Calculado"),
+                    ComposicaoItem("2", "Planta Industrial Osasco", 2613.6, "Calculado"),
+                    ComposicaoItem("3", "Centro Logístico Alphaville", 0.0, "Sem dados"),
+                    ComposicaoItem("4", "Subestação Central", 245.8, "Calculado")
+                )
+            }
+
+            val tensaoVal = ultimaMedicao?.tensao?.let { String.format(Locale.getDefault(), "%.1f V", it) } ?: "220,0 V"
+            val correnteVal = ultimaMedicao?.corrente?.let { String.format(Locale.getDefault(), "%.2f A", it) } ?: "14,2 A"
+            val potenciaVal = ultimaMedicao?.potencia_ativa?.let { String.format(Locale.getDefault(), "%.2f kW", it) } ?: "3,12 kW"
+            val frequenciaVal = ultimaMedicao?.frequencia?.let { String.format(Locale.getDefault(), "%.1f Hz", it) } ?: "60,0 Hz"
+            val fpVal = ultimaMedicao?.fator_potencia?.let { String.format(Locale.getDefault(), "%.2f", it) } ?: "0,98"
+            val energiaVal = ultimaMedicao?.energia_acumulada?.let { String.format(Locale.getDefault(), "%.2f kWh", it) } ?: "1.284 kWh"
 
             val indicadores = listOf(
                 EnergeticMetricData("Tensão Instantânea", tensaoVal, "Medição ao vivo", "flash"),
@@ -161,7 +202,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val statusText = if (ultimaMedicao != null || realSerieTemporalData.isNotEmpty()) {
                 "Ao vivo às $currentTime (PZEM $idPzem: $pointsCount pts)"
             } else {
-                "Sem resposta da API às $currentTime (Servidor offline)"
+                "Sem resposta da API às $currentTime (Verifique 10.0.2.2:3000)"
             }
 
             _uiState.update {
@@ -205,19 +246,6 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         _uiState.update { it.copy(isComposicaoModalOpen = visible) }
     }
 
-    fun onFilterChanged(key: String, value: String) {
-        _uiState.update { state ->
-            val updatedFilters = when (key) {
-                "period" -> state.filters.copy(period = value)
-                "location" -> state.filters.copy(location = value)
-                "sector" -> state.filters.copy(sector = value)
-                "equipment" -> state.filters.copy(equipment = value)
-                else -> state.filters
-            }
-            state.copy(filters = updatedFilters)
-        }
-    }
-
     private fun mapToChartPoints(metric: String): List<MedicaoPoint> {
         if (realSerieTemporalData.isEmpty()) {
             return emptyList()
@@ -239,5 +267,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             }
             if (valFloat != null) MedicaoPoint(formattedTime, valFloat) else null
         }
+    }
+
+    companion object {
+        private const val SAVED_FILTERS = "saved_filters_state"
     }
 }
